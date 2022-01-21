@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./public/fontawesome-free-5.15.4-web/css/all.min.css" />
+  <title>github热门</title>
+</head>
+
+<body>
+  <div id="container"></div>
+</body>
+<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+<!-- babel是解析JSX必备的库 -->
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script type="text/babel">
+  const { useEffect, useState, useRef } = React
+
+  const Nav = props => {
+    const { onTypeChange } = props;
+    const [ active, setActive ] = useState(0);
+    const [ typeArr, setTypeArr ] = useState([
+      "All",
+      "JavaScript",
+      "Ruby",
+      "Java",
+      "CSS",
+      "Python",
+    ]);
+    const activeStyle = {
+      color: "#c04539",
+      margin: "0 10px",
+      fontSize: "24px",
+      cursor: "pointer",
+    };
+    const commonStyle = {
+      margin: "0 10px",
+      fontSize: "24px",
+      cursor: "pointer",
+    };
+    const handleClick = (index) => {
+      setActive(index);
+      onTypeChange(typeArr[index]);
+    };
+    return (
+      <div>
+        <div style={{ width: "100%", textAlign: "center", margin: "20px 0" }}>
+          {typeArr.map((item, index) => {
+            return (
+              <span
+                style={index === active ? activeStyle : commonStyle}
+                onClick={() => handleClick(index)}
+                key={item}
+              >
+                {item}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const Card = props => {
+    const {
+      author,
+      starCount,
+      forkCount,
+      isussCount,
+      imgSrc,
+      orderNumber,
+      href
+    } = props;
+    const commonStyle = {
+      fontSize: "20px",
+      lineHeight: "22px",
+      margin: "6px 0",
+    };
+    const iconStyle = {
+      height: "22px",
+      width: "22px",
+      textAlign: "center",
+      marginRight: "10px",
+    };
+    return (
+      <a
+        href={href}
+        target="_blank"
+        style={{
+          borderRadius: 4,
+          color: "inherit",
+          textDecoration: "unset",
+          display: "flex",
+          flexDirection: "column",
+          width: "234px",
+          justifyContent: "center",
+          alignItems: "center",
+          margin: "20px 0",
+          background: "#eee",
+          padding: "0px 20px 10px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: "230px",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: "10px 0",
+            background: "#eee",
+          }}
+        >
+          <h2>#{orderNumber + 1}</h2>
+          <img src={imgSrc} alt="" width="190px" height="190px" />
+          <h4 style={{ color: "#bd3627", fontSize: "22px" }}>{author}</h4>
+          <div style={{ textAlign: "left", width: "100%" }}>
+            <div style={commonStyle}>
+              <i
+                className="fas fa-user"
+                style={{ ...iconStyle, color: "#ffbf74" }}
+              ></i>
+              <span>{author}</span>
+            </div>
+            <div style={commonStyle}>
+              <i
+                className="fas fa-star"
+                style={{ ...iconStyle, color: "#ffd701" }}
+              ></i>
+              <span>{starCount}</span>
+            </div>
+            <div style={commonStyle}>
+              <i
+                className="fas fa-code-branch"
+                style={{ ...iconStyle, color: "#8dc6f3" }}
+              ></i>
+              <span>{forkCount}</span>
+            </div>
+            <div style={commonStyle}>
+              <i
+                className="fas fa-exclamation-triangle"
+                style={{ ...iconStyle, color: "#f18d95" }}
+              ></i>
+              <span>{isussCount}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    );
+  };
+
+  const Content = props => {
+    const { data, loading } = props;
+    const [ allData, setAllData ] = useState([]);
+    return (
+      <div>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-around",
+            alignItems: "center",
+            padding: "0 20%",
+          }}
+        >
+          {
+            data && data.map((item, index) => {
+              const {
+                forks,
+                name,
+                stargazers_count,
+                open_issues_count,
+                owner: { avatar_url, login },
+              } = item;
+              return (
+                <Card
+                  key={item.name+item.id}
+                  name={name}
+                  author={login}
+                  starCount={stargazers_count}
+                  forkCount={forks}
+                  isussCount={open_issues_count}
+                  imgSrc={avatar_url}
+                  orderNumber={index}
+                  loading={loading}
+                  href={item.html_url}
+                ></Card>
+              );
+            })
+          }
+        </div>
+        {
+          loading &&
+          <div style={{ textAlign: 'center' }}>
+            <i className="fas fa-spinner fa-spin"></i>
+          </div>
+        }
+      </div>
+    );
+  };
+
+  const LoadMoreButton = props => {
+    const style = {
+      cursor: 'pointer',
+      color: '#fff',
+      background: "#1ba8e0",
+      border: "none",
+      borderRadius: 4,
+      padding: "8px 16px"
+    }
+    return (
+      <div style={{ textAlign: 'center', margin: "20px 0" }}>
+        <button { ...{ ...props, style } }>加载更多</button>
+      </div>
+    )
+  }
+
+  const App = () => {
+    const [ type, setType ] = useState('all');
+    const [ loading, setLoading ] = useState(true);
+    const [ data, setData ] = useState([]);
+    const [ page, setPage ] = useState(1);
+
+    const handleMore = () => {
+      setLoading(true);
+      setPage(page + 1);
+    }
+
+    useEffect(() => {
+      const fetchData = async () => {
+        setPage(1);
+        setLoading(true);
+        setData([]);
+        try {
+          const { data: res } = await axios.get(
+            `https://api.github.com/search/repositories?q=stars:%3E1${
+            type !== 'all' ? `+language:${type}` : ''
+            }&sort=stars&order=desc&type=Repositories`,
+          );
+          setData(res.items);
+          setLoading(false);
+          setPage(page + 1);
+        } catch (error) {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }, [type]);
+    useEffect(() => {
+      const fetchData = async () => {
+        if (loading && data.length > 0) {
+          try {
+            const { data: res } = await axios.get(
+              `https://api.github.com/search/repositories?q=stars:%3E1${
+              type !== 'all' ? `+language:${type}` : ''
+              }&sort=stars&order=desc&type=Repositories&page=${page}`,
+            );
+            setData([...data, ...res.items]);
+            setLoading(false);
+          } catch (error) {
+            setData([]);
+            setLoading(false);
+          }
+        }
+      };
+      fetchData();
+    }, [loading]);
+    return (
+      <div style={{ paddingBottom: 20 }}>
+        <Nav onTypeChange={setType} />
+        <Content data={data} loading={loading} />
+        {
+          !loading 
+          && <LoadMoreButton onClick={handleMore} />
+        }
+      </div>
+    );
+  };
+
+  ReactDOM.render(
+    <App />,
+    document.getElementById("container")
+  );
+</script>
+</html>
