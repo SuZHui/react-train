@@ -220,8 +220,9 @@ const App = () => {
       <Nav type={type} onTypeChange={handleChangeParams} />
       <Content list={data} loading={loading} />
       {
-        !loading 
-        && <LoadMoreButton onClick={handleMore} />
+        loading 
+        ? <div className="tc"><Spin /></div>
+        : <LoadMoreButton onClick={handleMore} />
       }
     </div>
   );
